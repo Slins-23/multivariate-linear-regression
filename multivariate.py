@@ -64,7 +64,7 @@ def populate_entries():
     with open(dataset_file_path, "r", encoding="utf-8") as dataset:
         rows = dataset.readlines()
         column_names = rows[0].replace("\n", "").split(",")
-        print(f"There are {len(column_names)} columns. These are column names, in ascending column order: {', '.join(column_names)}.")
+        print(f"There are {len(column_names)} columns. These are the column names, in ascending column order: {', '.join(column_names)}.")
         column_warning_printed = False
         name_warning_printed = False
 
@@ -296,7 +296,7 @@ def filter_entries(should_filter, filtered_list):
         comparison_targets = []
         comparison_operators = []
         while True:
-            l_target_features = input(f"Which features to filter (comma-separated)? Options: {', '.join(feature_list)}, {dependent_variable}")
+            l_target_features = input(f"Which features to filter (comma-separated)? Options: {', '.join(feature_list)}, {dependent_variable} ")
             l_target_features = l_target_features.split(",")
             feature_not_found = False
 
@@ -322,7 +322,7 @@ def filter_entries(should_filter, filtered_list):
                     feature_index = feature_list.index(target_feature)
                     feature_type = feature_types[feature_index]
 
-                    comparison_target = input(f"Type in the target value to compare the feature {target_feature} against. Your input must be a valid '{feature_type}'!")
+                    comparison_target = input(f"Type in the target value to compare the feature {target_feature} against. Your input must be a valid '{feature_type}'! ")
 
                     if feature_type == "str" and comparison_target not in nan_values.keys():
                         print("Error: Invalid target value. Given value is not in the dataset.")
@@ -338,7 +338,7 @@ def filter_entries(should_filter, filtered_list):
 
                     l_comparison_targets.append(comparison_target)
                 else:
-                    comparison_target = input(f"Type in the target value to compare the feature {target_feature} against. Your input must be a valid '{dependent_variable_type}'!")
+                    comparison_target = input(f"Type in the target value to compare the feature {target_feature} against. Your input must be a valid '{dependent_variable_type}'! ")
 
                     if dependent_variable_type == "str" and comparison_target not in nan_values.keys():
                         print("Error: Invalid target value. Given value is not in the dataset.")
@@ -799,6 +799,7 @@ populate_entries()
 
 print("Dataset loaded.")
 
+filtered_entries = entries
 while True:
     should_filter = input("Filter samples (y/n)? ")
     if should_filter == "y":
@@ -809,7 +810,7 @@ while True:
         print("Invalid input. Should be 'y' or 'n' without the quotation marks.")
         continue
 
-    filtered_entries = filter_entries(should_filter, entries)
+    filtered_entries = filter_entries(should_filter, filtered_entries)
     if not should_filter: break
     
 print(f"Total samples: {len(entries)}")
