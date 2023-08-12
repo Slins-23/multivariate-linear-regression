@@ -817,6 +817,15 @@ print(f"Total samples: {len(entries)}")
 print(f"Total filtered samples: {len(filtered_entries)}")
 
 TOTAL_STEPS = 50
+while True:
+    given_steps = input("How many training steps? (must be a number) ")
+    try:
+        TOTAL_STEPS = int(given_steps)
+    except:
+        print("Error: Could not convert given training steps to an integer.")
+        continue
+
+    break
 
 K = len(feature_list)
 
@@ -964,6 +973,15 @@ partial_b6 = 0
 '''
 
 LR = 0.5
+while True:
+    given_lr = input("Learning rate (must be a number): ")
+    try:
+        LR = float(given_lr)
+    except:
+        print("Error: Could not convert given learning rate to a float.")
+        continue
+
+    break
 
 
 # parameters = [[B0, B1, B2, B3, B4, B5, B6]]
