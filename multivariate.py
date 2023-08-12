@@ -6,8 +6,16 @@ import random
 import time
 import numpy as np
 import threading
+import os
 
 # Uses gradient descent
+
+while True:
+    dataset_file_path = input("Dataset file path (relative or absolute): ")
+    if os.path.isfile(dataset_file_path):
+        break
+    else:
+        print("Error: Invalid file path. File was not found.")
 
 entries = []
 filtered_entries = []
@@ -53,7 +61,7 @@ def populate_entries():
     print("1,50,250000")
     print("2,200,900000\n")
 
-    with open("dataset.csv", "r", encoding="utf-8") as dataset:
+    with open(dataset_file_path, "r", encoding="utf-8") as dataset:
         rows = dataset.readlines()
         column_names = rows[0].replace("\n", "").split(",")
         print(f"There are {len(column_names)} columns. These are column names, in ascending column order: {', '.join(column_names)}.")
