@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import math
 import functools
 from matplotlib.ticker import FuncFormatter
+from matplotlib.animation import FuncAnimation
 import random
 import time
 import numpy as np
@@ -476,7 +477,7 @@ def expected_fn(entry):
     inner_product = B.transpose() * X_i
     return inner_product[0, 0]
 
-def minimize(l_entries):
+def minimize(l_entries, iteration):
     global B
     global P
 
@@ -509,6 +510,7 @@ def minimize(l_entries):
     mse = (ERROR_MATRIX.transpose() * ERROR_MATRIX)[0, 0]
     iteration_loss = mse / (2 * N)
     iteration_loss = round(iteration_loss)
+    # loss[iteration - 1] = iteration_loss
     loss.append(iteration_loss)
 
     # print(f"M: {M} | PM: {partial_m} -> {learning_rate * partial_m} | B: {B} | PB: {partial_b} -> {learning_rate * partial_b}")
@@ -518,14 +520,22 @@ def minimize(l_entries):
     B -= LR * P
 
 def train(l_entries, total_steps=1000):
+    global finished
+
+    # plt.show()
     FPS = 60
     animation_duration_seconds = total_steps / FPS
     ms_per_frame = 1000 / FPS
     iteration = 1
     for step in range(total_steps):
-        minimize(l_entries)
+        minimize(l_entries, iteration)
         parameters.append(B)
+        # plt.plot(iterations, loss)
+        iterations.append(iteration)
+        iteration += 1
         # print(f"M: {M}, B: {B}, MSE: {loss}")
+
+    finished = True
 
 def predict():
     while True:
@@ -690,19 +700,43 @@ while True:
     break
 
 parameters = [B]
+# iterations = [iteration + 1 for iteration in range(TOTAL_STEPS)]
+# loss = [0 for _ in range(TOTAL_STEPS)]
+iterations = []
 loss = []
-iterations = [iteration + 1 for iteration in range(TOTAL_STEPS)]
 
-train(filtered_entries, TOTAL_STEPS)
+def animate(i):
+    try:
+        plt.cla()
+        plt.plot(iterations, loss)
+    except:
+        pass
+    
+    if finished:
+        ani.event_source.stop()
 
-plt.ylabel("Loss")
 plt.xlabel("Iterations")
-plt.plot(iterations, loss)
+plt.ylabel("Loss")
+plt.tight_layout()
 
-thread = threading.Thread(target=predict)
-thread.start()
+finished = False
+update_interval = 250
+while True:
+    update_interval = input("How often should the loss graph update (interval in milliseconds)? ")
+    try:
+        update_interval = float(update_interval)
+    except:
+        print("Error: Invalid interval value. Should be a number.")
+        continue
 
+    break
+
+training_thread = threading.Thread(target=train, args=(filtered_entries, TOTAL_STEPS))
+training_thread.start()
+
+ani = FuncAnimation(plt.gcf(), animate, interval=update_interval)
 plt.show()
 
-thread.join()
+training_thread.join()
+predict()
 
