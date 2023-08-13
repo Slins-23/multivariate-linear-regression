@@ -16,6 +16,8 @@ while True:
         print("Error: Invalid file path. File was not found.")
 
 entries = []
+columns = []
+column_types = []
 filtered_entries = []
 feature_list = []
 feature_types = []
@@ -27,14 +29,18 @@ dependent_variable_column = -1
 nan_values = {}
 
 class Entry:
-    def __init__(self, feature_values, dependent_variable_value):
+    def __init__(self, feature_values, dependent_variable_value, column_value_dict):
         self.features = {}
         for feature_name, feature_value in zip(feature_list, feature_values):
             self.features[feature_name] = feature_value
 
         self.dependent_variable_value = dependent_variable_value
 
+        self.column_value_dict = column_value_dict
+
 def populate_entries():
+    global columns
+    global column_types
     global dependent_variable
     global dependent_variable_type
     global dependent_variable_column
@@ -49,6 +55,8 @@ def populate_entries():
     with open(dataset_file_path, "r", encoding="utf-8") as dataset:
         rows = dataset.readlines()
         column_names = rows[0].replace("\n", "").split(",")
+        columns = column_names
+        column_types = [None for i in range(len(columns))]
         print(f"There are {len(column_names)} columns. These are the column names, in ascending column order: {', '.join(column_names)}.")
         column_warning_printed = False
         name_warning_printed = False
@@ -178,10 +186,10 @@ def populate_entries():
 
         for line in rows[1:]:
             try:
-                columns = line.replace("\n", "").split(",")
+                entry_columns = line.replace("\n", "").split(",")
                 feature_values = []
                 for feature_type, feature_column in zip(feature_types, feature_columns):
-                    value = columns[feature_column]
+                    value = entry_columns[feature_column]
                     match feature_type:
                         case "int":
                             value = float(value)
@@ -196,7 +204,7 @@ def populate_entries():
 
                     feature_values.append(value)
 
-                dependent_variable_value = columns[dependent_variable_column]
+                dependent_variable_value = entry_columns[dependent_variable_column]
                 match dependent_variable_type:
                         case "int":
                             dependent_variable_value = float(dependent_variable_value)
@@ -208,7 +216,21 @@ def populate_entries():
 
                             dependent_variable_value = nan_values[dependent_variable_value]
 
-                new_entry = Entry(feature_values, dependent_variable_value)
+
+                # Note: All columns which are not set as features, are set to be filtered, and represent a number, will be treated as a number.
+                # In other words. If the column is equal to 1 or "1", the script will always treat this as the number 1.
+                column_value_dict = {}
+                for column_name, idx in zip(column_names, range(len(column_names))):
+                    column_value = entry_columns[idx]
+                    column_types[idx] = 'str'
+                    try:
+                        column_value = float(column_value)
+                        column_types[idx] = 'float'
+                    except:
+                        pass
+                    column_value_dict[column_name] = column_value
+
+                new_entry = Entry(feature_values, dependent_variable_value, column_value_dict)
                 entries.append(new_entry)
             except:
                 continue
@@ -224,33 +246,45 @@ def custom_filter(entry, target_features, comparison_targets, comparison_operato
             case '==':
                 if feature == dependent_variable:
                     cmp = entry.dependent_variable_value == target
-                else:
+                elif feature in feature_list:
                     cmp = entry.features[feature] == target
+                else:
+                    cmp = entry.column_value_dict[feature] == target
             case '!=':
                 if feature == dependent_variable:
                     cmp = entry.dependent_variable_value != target
-                else:
+                elif feature in feature_list:
                     cmp = entry.features[feature] != target
+                else:
+                    cmp = entry.column_value_dict[feature] != target
             case '<':
                 if feature == dependent_variable:
                     cmp = entry.dependent_variable_value < target
-                else:
+                elif feature in feature_list:
                     cmp = entry.features[feature] < target
+                else:
+                    cmp = entry.column_value_dict[feature] < target
             case '<=':
                 if feature == dependent_variable:
                     cmp = entry.dependent_variable_value <= target
-                else:
+                elif feature in feature_list:
                     cmp = entry.features[feature] <= target
+                else:
+                    cmp = entry.column_value_dict[feature] <= target
             case '>=':
                 if feature == dependent_variable:
                     cmp = entry.dependent_variable_value >= target
-                else:
+                elif feature in feature_list:
                     cmp = entry.features[feature] >= target
+                else:
+                    cmp = entry.column_value_dict[feature] >= target
             case '>':
                 if feature == dependent_variable:
                     cmp = entry.dependent_variable_value > target
-                else:
+                elif feature in feature_list:
                     cmp = entry.features[feature] > target
+                else:
+                    cmp = entry.column_value_dict[feature] > target
 
         if not cmp:
             return False
@@ -266,29 +300,18 @@ def filter_entries(should_filter, filtered_list):
         comparison_targets = []
         comparison_operators = []
         while True:
-            l_target_features = input(f"Which features to filter (comma-separated)? Options: {', '.join(feature_list)}, {dependent_variable} ")
+            l_target_features = input(f"Which features/columns to filter (comma-separated)? Options: {', '.join(columns)} ")
             l_target_features = l_target_features.split(",")
-            feature_not_found = False
-
-            for target_feature in l_target_features:
-                if target_feature not in feature_list and target_feature != dependent_variable:
-                    print(f"Feature {target_feature} is not a valid feature.")
-                    feature_not_found = True
-                    break
-
-            if feature_not_found:
-                continue
 
             l_comparison_targets = []
             target_invalid = False
             
-
             # These checks are separated in different loops (resulting in 3 times the necessary time for execution)
             # The reason is for more clarity and isolation of validation checks
             # It shouldn't slow down most times, as there usually aren't that many features (at least with what I have in mind)
             # Also, it is not optimized and I could definitely write this in a more isolated, clear, way, with faster runtimes as well
             for target_feature in l_target_features:
-                if target_feature != dependent_variable:
+                if target_feature in feature_list:
                     feature_index = feature_list.index(target_feature)
                     feature_type = feature_types[feature_index]
 
@@ -307,7 +330,7 @@ def filter_entries(should_filter, filtered_list):
                             break
 
                     l_comparison_targets.append(comparison_target)
-                else:
+                elif target_feature == dependent_variable:
                     comparison_target = input(f"Type in the target value to compare the feature {target_feature} against. Your input must be a valid '{dependent_variable_type}'! ")
 
                     if dependent_variable_type == "str" and comparison_target not in nan_values.keys():
@@ -315,6 +338,22 @@ def filter_entries(should_filter, filtered_list):
                         target_invalid = True
                         break
                     elif dependent_variable_type == "int" or dependent_variable_type == "float":
+                        try:
+                            comparison_target = float(comparison_target)
+                        except:
+                            print("Error: Invalid target value. Could not convert it to a number.")
+                            target_invalid = True
+                            break
+
+                    l_comparison_targets.append(comparison_target)
+
+                else:
+                    column_index = columns.index(target_feature)
+                    column_type = column_types[column_index]
+
+                    comparison_target = input(f"Type in the target value to compare the column {target_feature} against. Your input must be a valid '{column_type}'! ")
+
+                    if column_type == "int" or column_type == "float":
                         try:
                             comparison_target = float(comparison_target)
                         except:
@@ -332,7 +371,7 @@ def filter_entries(should_filter, filtered_list):
             invalid_operator = False
 
             for target_feature in l_target_features:
-                if target_feature != dependent_variable:
+                if target_feature in feature_list:
                     feature_index = feature_list.index(target_feature)
                     feature_type = feature_types[feature_index]
                 
@@ -350,7 +389,7 @@ def filter_entries(should_filter, filtered_list):
                             break
 
                     l_comparison_operators.append(comparison_operator)
-                else:
+                elif target_feature == dependent_variable:
                     comparison_operator = input(f"Type in the comparison operator (must be '==', '!=', '<', '<=', '>=' or '>'): ").strip()
                     
                     if comparison_operator not in valid_operators:
@@ -359,6 +398,24 @@ def filter_entries(should_filter, filtered_list):
                         break
 
                     if dependent_variable_type == "str":
+                        if comparison_operator != "==" and comparison_operator != "!=":
+                            print("Error: Strings can only be compared using the equality operators '==' and '!='.")
+                            invalid_operator = True
+                            break
+
+                    l_comparison_operators.append(comparison_operator)
+                else:
+                    column_index = columns.index(target_feature)
+                    column_type = column_types[column_index]
+                
+                    comparison_operator = input(f"Type in the comparison operator (must be '==', '!=', '<', '<=', '>=' or '>'): ").strip()
+                    
+                    if comparison_operator not in valid_operators:
+                        print("Error: Given comparison operator is not in the list.")
+                        invalid_operator = True
+                        break
+
+                    if column_type == "str":
                         if comparison_operator != "==" and comparison_operator != "!=":
                             print("Error: Strings can only be compared using the equality operators '==' and '!='.")
                             invalid_operator = True
@@ -493,7 +550,7 @@ def predict():
                 feature_values.append(value)
                 break
 
-        entry = Entry(feature_values, -1)
+        entry = Entry(feature_values, -1, {})
 
         normalize(entry)
 
