@@ -537,6 +537,8 @@ def train(l_entries, total_steps=1000):
 
     finished = True
     print("Done training model.")
+    print(f"Final weights: {B}")
+    print(f"Final partials: {P}")
 
 def predict():
     while True:
@@ -779,7 +781,12 @@ def animate(i):
             plt.subplot(1, 2, 2)
 
         plt.cla()
-        plt.plot(iterations, loss)
+        try:
+            plt.plot(iterations, loss)
+        except:
+            # Throws exception from time to time as `iterations` and `loss` have unmatching dimensions, as matplotlib calls this function `animate`
+            # from another thread, it results in a race condition
+            return
 
         legends = []
         for row in range(0, K + 1):
