@@ -603,7 +603,7 @@ while True:
 print(f"Total samples: {len(entries)}")
 print(f"Total filtered samples: {len(filtered_entries)}")
 
-should_normalize = True
+should_normalize = False
 normalization_warned = False
 while True:
     if not normalization_warned:
@@ -619,11 +619,15 @@ while True:
     
     should_normalize = input("Normalize dataset? (y/n) ")
 
-    if should_normalize:
+    if should_normalize == 'y':
         should_normalize = True
-        break
+    elif should_normalize == 'n':
+        should_normalize = False
     else:
+        print("Invalid input. Should be 'y' or 'n'.")
         continue
+    
+    break
 
 
 TOTAL_STEPS = 50
@@ -637,7 +641,39 @@ while True:
 
     break
 
+user_weights = []
+use_predefined_weights = False
 K = len(feature_list)
+while True:
+    result = input("Use random weights? (Otherwise you will have to type your own) (y/n) ")
+    if result == 'n':
+        print("Note: Weight must be a number.")
+        use_predefined_weights = True
+
+        for idx in range(K + 1):
+            while True:
+                if idx != 0:
+                    value = input(f"B{idx} ({feature_list[idx - 1]}): ")
+                else:
+                    value = input("B0: ")
+
+                try:
+                    weight = float(value)
+                    user_weights.append(weight)
+                except Exception as e:
+                    print(f"Error: Given value {value} is not a number.")
+                    continue
+
+                break
+
+    elif result != 'y':
+        print("Error: Invalid input. Must be 'y' or 'n'.")
+        continue
+
+    break
+
+
+
 
 feature_min_maxes = []
 for feature_type in feature_types:
@@ -702,8 +738,12 @@ B = np.zeros((K + 1, 1), dtype=np.float64)
 # Matrix as Matrix
 B = np.matrix(B)
 
-for row in range(K + 1):
-    B[row, 0] = random.randint(1, 10)
+if not use_predefined_weights:
+    for row in range(K + 1):
+        B[row, 0] = random.randint(1, 10)
+else:
+    for row in range(K + 1):
+        B[row, 0] = user_weights[row]
 
 # Partials matrix
 # Matrix as NDarray
@@ -732,9 +772,15 @@ iterations = []
 loss = []
 
 def animate(i):
+    global predicted_line
+    
     try:
+        if len(feature_list) == 1:
+            plt.subplot(1, 2, 2)
+
         plt.cla()
         plt.plot(iterations, loss)
+
         legends = []
         for row in range(0, K + 1):
             if row == 0:
@@ -744,16 +790,22 @@ def animate(i):
             legends.append(legend)
 
         plt.legend(handles=legends)
-    except:
+
+        if len(feature_list) == 1:
+            plt.subplot(1, 2, 1)
+
+            predicted_line.remove()
+            y = B[0, 0] + (B[1, 0] * x)
+
+            predicted_line, = plt.plot(x, y, c='r')
+
+    except Exception as e:
+        print(e)
         pass
     
     if finished:
         ani.event_source.stop()
         print("Stopped animating the graph. Close it in order to predict values.")
-
-plt.xlabel("Iterations")
-plt.ylabel("Loss")
-plt.tight_layout()
 
 finished = False
 update_interval = 250
@@ -769,6 +821,47 @@ while True:
 
 training_thread = threading.Thread(target=train, args=(filtered_entries, TOTAL_STEPS))
 training_thread.start()
+
+# figure, axes = plt.subplots()
+# figure.tight_layout()
+
+if len(feature_list) == 1:
+    plt.subplot(1, 2, 1)
+    plt.title("Predicted line")
+    plt.xlabel(feature_list[0])
+    plt.ylabel(dependent_variable)
+
+    # Draw scatter plot of all entries and create the linear space for the input
+    point_xs = []
+    point_ys = []
+    for entry in filtered_entries:
+        point_x = entry.features[feature_list[0]]
+        point_y = entry.dependent_variable_value
+
+        point_xs.append(point_x)
+        point_ys.append(point_y)
+
+        
+    plt.scatter(point_xs, point_ys, c='g')
+
+    if should_normalize:
+        x = np.linspace(0, 1)
+    else:
+        x = np.linspace(feature_min_maxes[0][0], feature_min_maxes[0][1])
+
+    y = B[0, 0] + (B[1, 0] * x)
+    predicted_line, = plt.plot(x, y, c='r')
+
+    plt.subplot(1, 2, 2)
+    plt.title("Loss")
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    
+    plt.subplot(1, 2, 1)
+else:
+    plt.title("Loss")
+    plt.title("Loss")
+    plt.xlabel("Iterations")
 
 ani = FuncAnimation(plt.gcf(), animate, interval=update_interval)
 plt.show()
