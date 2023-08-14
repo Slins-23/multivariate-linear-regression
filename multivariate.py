@@ -784,9 +784,9 @@ def animate(i):
         legends = []
         for row in range(0, K + 1):
             if row == 0:
-                legend = Line2D([0], [0], label=f"B0: {B[row, 0]}")
+                legend = Line2D([0], [0], label=f"B0: {B[row, 0]} | P0: {P[row, 0]}")
             else:
-                legend = Line2D([0], [0], label=f"B{row} ({feature_list[row - 1]}): {B[row, 0]}")
+                legend = Line2D([0], [0], label=f"B{row} ({feature_list[row - 1]}): {B[row, 0]} | P{row}: {P[row, 0]}")
             legends.append(legend)
 
         plt.legend(handles=legends)
