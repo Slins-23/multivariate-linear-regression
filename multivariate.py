@@ -1,3 +1,4 @@
+from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import math
 import functools
@@ -509,15 +510,14 @@ def minimize(l_entries, iteration):
 
     mse = (ERROR_MATRIX.transpose() * ERROR_MATRIX)[0, 0]
     iteration_loss = mse / (2 * N)
-    iteration_loss = round(iteration_loss)
     # loss[iteration - 1] = iteration_loss
     loss.append(iteration_loss)
+
+    B -= LR * P
 
     # print(f"M: {M} | PM: {partial_m} -> {learning_rate * partial_m} | B: {B} | PB: {partial_b} -> {learning_rate * partial_b}")
     # print(f"M: {M} | Partial: {partial_m} | Change: {m_learning_rate * partial_m}")
     # print(f"B: {B} | Partial: {partial_b} | Change: {b_learning_rate * partial_b}")
-    
-    B -= LR * P
 
 def train(l_entries, total_steps=1000):
     global finished
@@ -536,6 +536,7 @@ def train(l_entries, total_steps=1000):
         # print(f"M: {M}, B: {B}, MSE: {loss}")
 
     finished = True
+    print("Done training model.")
 
 def predict():
     while True:
@@ -562,7 +563,8 @@ def predict():
 
         entry = Entry(feature_values, -1, {})
 
-        normalize(entry)
+        if should_normalize:
+            normalize(entry)
 
         predicted_value = expected_fn(entry)
 
@@ -601,6 +603,29 @@ while True:
 print(f"Total samples: {len(entries)}")
 print(f"Total filtered samples: {len(filtered_entries)}")
 
+should_normalize = True
+normalization_warned = False
+while True:
+    if not normalization_warned:
+        print("\nNote: Normalizing the dataset for training results in (different) weights trained on the normalized values.")
+        print("This means that it loses some interpretation value compared to training on non-normalized data.")
+        print("However, it tends to make data processing faster among other things.")
+        print("The model should perform similarly given the ideal parameters, however, it might be harder to interpret how the features influence the predicted value solely by looking at the weights with the naked eye.")
+        print("i.e. In a model that predicts house prices with respect to its area (m²), the feature weight B1 which represents the area would be equal to the predicted price per square meter of the entire dataset.")
+        print("You wouldn't be able to infer this from the normalized weights.")
+        print("Restricts training data to [0, 1]")
+        normalization_warned = True
+
+    
+    should_normalize = input("Normalize dataset? (y/n) ")
+
+    if should_normalize:
+        should_normalize = True
+        break
+    else:
+        continue
+
+
 TOTAL_STEPS = 50
 while True:
     given_steps = input("How many training steps? (must be a number) ")
@@ -628,8 +653,9 @@ for entry in filtered_entries:
 
 N = len(filtered_entries)
 
-for entry in filtered_entries:
-    normalize(entry)
+if should_normalize:
+    for entry in filtered_entries:
+        normalize(entry)
 
 '''
             Input Matrix
@@ -709,11 +735,21 @@ def animate(i):
     try:
         plt.cla()
         plt.plot(iterations, loss)
+        legends = []
+        for row in range(0, K + 1):
+            if row == 0:
+                legend = Line2D([0], [0], label=f"B0: {B[row, 0]}")
+            else:
+                legend = Line2D([0], [0], label=f"B{row} ({feature_list[row - 1]}): {B[row, 0]}")
+            legends.append(legend)
+
+        plt.legend(handles=legends)
     except:
         pass
     
     if finished:
         ani.event_source.stop()
+        print("Stopped animating the graph. Close it in order to predict values.")
 
 plt.xlabel("Iterations")
 plt.ylabel("Loss")
