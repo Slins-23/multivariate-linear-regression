@@ -277,18 +277,22 @@ def populate_entries():
     print("Finished populating the entries.")
 
 def custom_filter(entry, target_features, comparison_targets, comparison_operators):
-    for feature, target, operator in zip(target_features, comparison_targets, comparison_operators):
-        cmp = True
+    global min_distance
+    global max_distance
 
-        if reference_features != []:
-            global min_distance
-            global max_distance
-
+    if reference_values != []:
+        if entry.distance == None:
             entry.distance = entry.distance_from_reference()
+
             if entry.distance > max_distance:
                 max_distance = entry.distance
             elif entry.distance < min_distance:
                 min_distance = entry.distance
+
+        
+
+    for feature, target, operator in zip(target_features, comparison_targets, comparison_operators):
+        cmp = True
 
         if feature != "distance_builtin":
             match operator:
@@ -355,6 +359,9 @@ def custom_filter(entry, target_features, comparison_targets, comparison_operato
     return True
 
 def filter_entries(should_filter, filtered_list):
+    global min_distance
+    global max_distance
+
     if should_filter:
         print("Note: The filtering occurs only once, for all features.")
 
@@ -518,14 +525,20 @@ def filter_entries(should_filter, filtered_list):
 
             break
 
+        if reference_features != []:
+            min_distance = math.inf
+            max_distance = -math.inf
+
         filtered_list = list(filter(lambda entry: custom_filter(entry, target_features, comparison_targets, comparison_operators), filtered_list))
     else:
         if reference_features != []:
-            global min_distance
-            global max_distance
+            min_distance = math.inf
+            max_distance = -math.inf
 
             for entry in filtered_list:
-                entry.distance = entry.distance_from_reference()
+                if entry.distance == None:
+                    entry.distance = entry.distance_from_reference()
+
                 if entry.distance > max_distance:
                     max_distance = entry.distance
                 elif entry.distance < min_distance:
