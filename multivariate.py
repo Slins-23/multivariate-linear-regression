@@ -30,6 +30,12 @@ dependent_variable_column = -1
 
 nan_values = {}
 
+reference_features = []
+reference_values = []
+reference_types = []
+min_distance = math.inf
+max_distance = -math.inf
+
 class Entry:
     def __init__(self, feature_values, dependent_variable_value, column_value_dict):
         self.features = {}
@@ -39,6 +45,35 @@ class Entry:
         self.dependent_variable_value = dependent_variable_value
 
         self.column_value_dict = column_value_dict
+
+        self.distance = None
+
+
+    # Euclidean distance
+    def distance_from_reference(self):
+        if reference_values == [] or reference_features == []:
+            return None
+        
+        dist = 0
+        for reference_feature, reference_value in zip(reference_features, reference_values):
+            if reference_feature in feature_list:
+                current_feature_value = self.features[reference_feature]
+
+            elif reference_feature == dependent_variable:
+                current_feature_value = self.dependent_variable_value
+
+            elif reference_feature in columns:
+                current_feature_value = self.column_value_dict[reference_feature]
+            else:
+                print(f"Error: Reference feature '{reference_feature}' is not in the dataset.")
+                exit(-1)
+                
+                
+            dist += math.pow(reference_value - current_feature_value, 2)
+
+        dist = math.sqrt(dist)
+
+        return dist
 
 def populate_entries():
     global columns
@@ -244,49 +279,75 @@ def populate_entries():
 def custom_filter(entry, target_features, comparison_targets, comparison_operators):
     for feature, target, operator in zip(target_features, comparison_targets, comparison_operators):
         cmp = True
-        match operator:
-            case '==':
-                if feature == dependent_variable:
-                    cmp = entry.dependent_variable_value == target
-                elif feature in feature_list:
-                    cmp = entry.features[feature] == target
-                else:
-                    cmp = entry.column_value_dict[feature] == target
-            case '!=':
-                if feature == dependent_variable:
-                    cmp = entry.dependent_variable_value != target
-                elif feature in feature_list:
-                    cmp = entry.features[feature] != target
-                else:
-                    cmp = entry.column_value_dict[feature] != target
-            case '<':
-                if feature == dependent_variable:
-                    cmp = entry.dependent_variable_value < target
-                elif feature in feature_list:
-                    cmp = entry.features[feature] < target
-                else:
-                    cmp = entry.column_value_dict[feature] < target
-            case '<=':
-                if feature == dependent_variable:
-                    cmp = entry.dependent_variable_value <= target
-                elif feature in feature_list:
-                    cmp = entry.features[feature] <= target
-                else:
-                    cmp = entry.column_value_dict[feature] <= target
-            case '>=':
-                if feature == dependent_variable:
-                    cmp = entry.dependent_variable_value >= target
-                elif feature in feature_list:
-                    cmp = entry.features[feature] >= target
-                else:
-                    cmp = entry.column_value_dict[feature] >= target
-            case '>':
-                if feature == dependent_variable:
-                    cmp = entry.dependent_variable_value > target
-                elif feature in feature_list:
-                    cmp = entry.features[feature] > target
-                else:
-                    cmp = entry.column_value_dict[feature] > target
+
+        if reference_features != []:
+            global min_distance
+            global max_distance
+
+            entry.distance = entry.distance_from_reference()
+            if entry.distance > max_distance:
+                max_distance = entry.distance
+            elif entry.distance < min_distance:
+                min_distance = entry.distance
+
+        if feature != "distance_builtin":
+            match operator:
+                case '==':
+                    if feature == dependent_variable:
+                        cmp = entry.dependent_variable_value == target
+                    elif feature in feature_list:
+                        cmp = entry.features[feature] == target
+                    else:
+                        cmp = entry.column_value_dict[feature] == target
+                case '!=':
+                    if feature == dependent_variable:
+                        cmp = entry.dependent_variable_value != target
+                    elif feature in feature_list:
+                        cmp = entry.features[feature] != target
+                    else:
+                        cmp = entry.column_value_dict[feature] != target
+                case '<':
+                    if feature == dependent_variable:
+                        cmp = entry.dependent_variable_value < target
+                    elif feature in feature_list:
+                        cmp = entry.features[feature] < target
+                    else:
+                        cmp = entry.column_value_dict[feature] < target
+                case '<=':
+                    if feature == dependent_variable:
+                        cmp = entry.dependent_variable_value <= target
+                    elif feature in feature_list:
+                        cmp = entry.features[feature] <= target
+                    else:
+                        cmp = entry.column_value_dict[feature] <= target
+                case '>=':
+                    if feature == dependent_variable:
+                        cmp = entry.dependent_variable_value >= target
+                    elif feature in feature_list:
+                        cmp = entry.features[feature] >= target
+                    else:
+                        cmp = entry.column_value_dict[feature] >= target
+                case '>':
+                    if feature == dependent_variable:
+                        cmp = entry.dependent_variable_value > target
+                    elif feature in feature_list:
+                        cmp = entry.features[feature] > target
+                    else:
+                        cmp = entry.column_value_dict[feature] > target
+        elif feature == "distance_builtin":
+            match operator:
+                case '==':
+                    cmp = entry.distance == target
+                case '!=':
+                    cmp = entry.distance != target
+                case '<':
+                    cmp = entry.distance < target
+                case '<=':
+                    cmp = entry.distance <= target
+                case '>=':
+                    cmp = entry.distance >= target
+                case '>':
+                    cmp = entry.distance > target
 
         if not cmp:
             return False
@@ -302,7 +363,11 @@ def filter_entries(should_filter, filtered_list):
         comparison_targets = []
         comparison_operators = []
         while True:
-            l_target_features = input(f"Which features/columns to filter (comma-separated)? Options: {', '.join(columns)} ")
+            if reference_features == []:
+                l_target_features = input(f"Which features/columns to filter (comma-separated and no whitespace i.e. 'area_m2,price_brl')? Options: {', '.join(columns)} ")
+            else:
+                l_target_features = input(f"Which features/columns to filter (comma-separated and no whitespace i.e. 'area_m2,price_brl')? Options: {', '.join(columns)}, distance_builtin ")
+
             l_target_features = l_target_features.split(",")
 
             l_comparison_targets = []
@@ -317,7 +382,7 @@ def filter_entries(should_filter, filtered_list):
                     feature_index = feature_list.index(target_feature)
                     feature_type = feature_types[feature_index]
 
-                    comparison_target = input(f"Type in the target value to compare the feature {target_feature} against. Your input must be a valid '{feature_type}'! ")
+                    comparison_target = input(f"Type in the target value to compare the column '{target_feature}' against. Your input must be a valid '{feature_type}'! ")
 
                     if feature_type == "str" and comparison_target not in nan_values.keys():
                         print("Error: Invalid target value. Given value is not in the dataset.")
@@ -333,7 +398,7 @@ def filter_entries(should_filter, filtered_list):
 
                     l_comparison_targets.append(comparison_target)
                 elif target_feature == dependent_variable:
-                    comparison_target = input(f"Type in the target value to compare the feature {target_feature} against. Your input must be a valid '{dependent_variable_type}'! ")
+                    comparison_target = input(f"Type in the target value to compare the column '{target_feature}' against. Your input must be a valid '{dependent_variable_type}'! ")
 
                     if dependent_variable_type == "str" and comparison_target not in nan_values.keys():
                         print("Error: Invalid target value. Given value is not in the dataset.")
@@ -349,11 +414,21 @@ def filter_entries(should_filter, filtered_list):
 
                     l_comparison_targets.append(comparison_target)
 
+                elif target_feature == "distance_builtin":
+                    comparison_target = input(f"Type in the target value to compare the euclidean distance against the provided reference values. Your input must be a valid number! ")
+                    try:
+                        comparison_target = float(comparison_target)
+                    except:
+                        print("Error: Invalid target value. Could not convert it to a number.")
+                        target_invalid = True
+                        break
+
+                    l_comparison_targets.append(comparison_target)
                 else:
                     column_index = columns.index(target_feature)
                     column_type = column_types[column_index]
 
-                    comparison_target = input(f"Type in the target value to compare the column {target_feature} against. Your input must be a valid '{column_type}'! ")
+                    comparison_target = input(f"Type in the target value to compare the column '{target_feature}' against. Your input must be a valid '{column_type}'! ")
 
                     if column_type == "int" or column_type == "float":
                         try:
@@ -372,12 +447,12 @@ def filter_entries(should_filter, filtered_list):
             l_comparison_operators = []
             invalid_operator = False
 
-            for target_feature in l_target_features:
+            for idx, target_feature in enumerate(l_target_features):
                 if target_feature in feature_list:
                     feature_index = feature_list.index(target_feature)
                     feature_type = feature_types[feature_index]
                 
-                    comparison_operator = input(f"Type in the comparison operator (must be '==', '!=', '<', '<=', '>=' or '>'): ").strip()
+                    comparison_operator = input(f"Type in the comparison operator to compare the column '{target_feature}' against the value '{l_comparison_targets[idx]}' (must be '==', '!=', '<', '<=', '>=' or '>'): ").strip()
                     
                     if comparison_operator not in valid_operators:
                         print("Error: Given comparison operator is not in the list.")
@@ -392,7 +467,7 @@ def filter_entries(should_filter, filtered_list):
 
                     l_comparison_operators.append(comparison_operator)
                 elif target_feature == dependent_variable:
-                    comparison_operator = input(f"Type in the comparison operator (must be '==', '!=', '<', '<=', '>=' or '>'): ").strip()
+                    comparison_operator = input(f"Type in the comparison operator to compare the column '{target_feature}' against the value '{l_comparison_targets[idx]}' (must be '==', '!=', '<', '<=', '>=' or '>'): ").strip()
                     
                     if comparison_operator not in valid_operators:
                         print("Error: Given comparison operator is not in the list.")
@@ -406,11 +481,20 @@ def filter_entries(should_filter, filtered_list):
                             break
 
                     l_comparison_operators.append(comparison_operator)
+                elif target_feature == "distance_builtin":
+                    comparison_operator = input(f"Type in the comparison operator to compare the distance against the value '{l_comparison_targets[idx]}' (must be '==', '!=', '<', '<=', '>=' or '>'): ").strip()
+                    
+                    if comparison_operator not in valid_operators:
+                        print("Error: Given comparison operator is not in the list.")
+                        invalid_operator = True
+                        break
+
+                    l_comparison_operators.append(comparison_operator)
                 else:
                     column_index = columns.index(target_feature)
                     column_type = column_types[column_index]
                 
-                    comparison_operator = input(f"Type in the comparison operator (must be '==', '!=', '<', '<=', '>=' or '>'): ").strip()
+                    comparison_operator = input(f"Type in the comparison operator to compare the column '{target_feature}' against the value '{l_comparison_targets[idx]}' (must be '==', '!=', '<', '<=', '>=' or '>'): ").strip()
                     
                     if comparison_operator not in valid_operators:
                         print("Error: Given comparison operator is not in the list.")
@@ -435,6 +519,17 @@ def filter_entries(should_filter, filtered_list):
             break
 
         filtered_list = list(filter(lambda entry: custom_filter(entry, target_features, comparison_targets, comparison_operators), filtered_list))
+    else:
+        if reference_features != []:
+            global min_distance
+            global max_distance
+
+            for entry in filtered_list:
+                entry.distance = entry.distance_from_reference()
+                if entry.distance > max_distance:
+                    max_distance = entry.distance
+                elif entry.distance < min_distance:
+                    min_distance = entry.distance
             
 
     print("Samples have been filtered.")
@@ -587,6 +682,75 @@ def predict():
 populate_entries()
 
 print("Dataset loaded.")
+
+while True:
+    result = input("Give reference value? (y/n) ")
+    if result == 'y':
+        while True:
+            print("Must be a number!")
+            l_given_reference_features = input(f"Which feature(s)/column(s) to use as reference(s)? (comma-separated and no whitespace i.e. 'area_m2,price_brl')? Options: {', '.join(columns)} ")
+            l_given_reference_features = l_given_reference_features.split(",")
+
+            l_reference_features = []
+            l_reference_types = []
+            reference_feature_invalid = False
+            for reference_feature in l_given_reference_features:
+                if reference_feature in l_reference_features:
+                    print(f"Error: Duplicate feature/column '{reference_feature}'.")
+                    reference_feature_invalid = True
+                    break
+
+                if reference_feature in feature_list:
+                    feature_index = feature_list.index(reference_feature)
+                    feature_type = feature_types[feature_index]
+
+                    l_reference_features.append(reference_feature)
+                    l_reference_types.append(feature_type)
+                elif reference_feature == dependent_variable:
+                    l_reference_features.append(dependent_variable)
+                    l_reference_types.append(dependent_variable_type)
+                elif reference_feature in columns:
+                    l_reference_features.append(reference_feature)
+                    l_reference_types.append("float") # THIS COULD BE A STRING OR A NUMBER, BUT I SET IT TO FLOAT EITHER WAY BECAUSE STRING SIMILARITY IS NOT IMPLEMENTED
+                else:
+                    print(f"Error: Feature '{reference_feature}' is not a valid feature. ")
+                    reference_feature_invalid = True
+
+            if reference_feature_invalid:
+                continue
+
+            l_reference_values = []
+            reference_value_invalid = False
+
+            print("Type in the reference values for each respective feature.")
+            for reference_feature, reference_type in zip(l_reference_features, l_reference_types):
+                while True:
+                    reference_value = input(f"{reference_feature} (type: '{reference_type}'): ")
+
+                    if reference_type == 'float' or reference_type == 'int':
+                        try:
+                            reference_value = float(reference_value)
+                            l_reference_values.append(reference_value)
+                        except Exception as e:
+                            print(f"Error: Given value '{reference_value}' is not a number.")
+                            continue
+                    elif reference_type == 'str':
+                        print(f"Error: Value must be a number. Cannot measure string similarity, only euclidean distance.")
+                        l_reference_values.append(reference_value)
+                    break
+
+            if reference_value_invalid:
+                continue
+
+            reference_features = l_reference_features
+            reference_values = l_reference_values
+
+            break
+    elif result != 'n':
+        print("Error: Invalid input. Must be 'y' or 'n'.")
+        continue
+
+    break
 
 filtered_entries = entries
 while True:
@@ -841,6 +1005,7 @@ if len(feature_list) == 1:
     # Draw scatter plot of all entries and create the linear space for the input
     point_xs = []
     point_ys = []
+    colors = []
     for entry in filtered_entries:
         point_x = entry.features[feature_list[0]]
         point_y = entry.dependent_variable_value
@@ -848,8 +1013,15 @@ if len(feature_list) == 1:
         point_xs.append(point_x)
         point_ys.append(point_y)
 
-        
-    plt.scatter(point_xs, point_ys, c='g')
+        if reference_features != []:
+            color = [entry.distance / max_distance, 1 - (entry.distance / max_distance), 0]
+            colors.append(color)
+        else:
+            color = [0, 1, 0]
+            colors.append(color)
+
+    
+    plt.scatter(point_xs, point_ys, c=colors)
 
     if should_normalize:
         x = np.linspace(0, 1)
