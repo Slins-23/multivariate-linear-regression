@@ -1,6 +1,6 @@
 # Multivariate Linear Regression
 <p align="center">Example showcase video (bad quality because Github limit is 10MB)</p>
-<p align="center">![Showcase video]https://github.com/Slins-23/multivariate-linear-regression/assets/35003248/b14bfe08-fade-4969-ad80-700706ccc211[/]</p>
+<p align="center">![Showcase video](https://github.com/Slins-23/multivariate-linear-regression/assets/35003248/b14bfe08-fade-4969-ad80-700706ccc211)</p>
 
 
 A Python implementation from scratch of multivariate linear regression, through gradient descent. (Or univariate) 
