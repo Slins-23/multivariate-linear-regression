@@ -1,4 +1,6 @@
-# multivariate-linear-regression
+# Multivariate Linear Regression
+## [center] Example video [/center]
+[center]URL[/center]
 A Python implementation from scratch of multivariate linear regression, through gradient descent. (Or univariate) 
 
 This is my first machine learning project as I started to study it one week ago and I superficially studied linear regression. Expect accuracy and speed issues, typos, etc.

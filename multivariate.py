@@ -690,7 +690,7 @@ def predict():
                     break
         '''
 
-        print(f"Predicted value: {predicted_value}")
+        print(f"Predicted value ({dependent_variable}): {predicted_value}")
 
 populate_entries()
 
