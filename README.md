@@ -1,5 +1,5 @@
 # Multivariate Linear Regression
-## [center] Example video [/center]
+<p align="center">Example video</p>
 [center]URL[/center]
 A Python implementation from scratch of multivariate linear regression, through gradient descent. (Or univariate) 
 
