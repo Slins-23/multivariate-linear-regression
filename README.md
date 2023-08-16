@@ -1,6 +1,7 @@
 # Multivariate Linear Regression
 <p align="center">Example showcase video (bad quality because Github limit is 10MB)</p>
-<p align="center">![Showcase video](https://github.com/Slins-23/multivariate-linear-regression/assets/35003248/b14bfe08-fade-4969-ad80-700706ccc211)</p>
+<p align="center">
+https://github.com/Slins-23/multivariate-linear-regression/assets/35003248/1a5a9bb7-ee98-44c5-9ff4-2f9496c8dfa6</p>
 
 
 A Python implementation from scratch of multivariate linear regression, through gradient descent. (Or univariate) 
@@ -16,5 +17,4 @@ The reference values are compared against the dataset before it gets normalized.
 Add cosine similarity for distance (would account for strings as well)
 
 
-https://github.com/Slins-23/multivariate-linear-regression/assets/35003248/1a5a9bb7-ee98-44c5-9ff4-2f9496c8dfa6
 
