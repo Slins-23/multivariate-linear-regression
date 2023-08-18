@@ -43,23 +43,23 @@ There are 3 main matrices in which the algorithm plays out. They are the variabl
 
 `B` represents the weight matrix (coefficients of the predicted model). Its dimensions are `(K + 1)x1`. It can be predefined or randomly initialized, the option is given in a prompt.
 
-            <p align="center">Input Matrix (X)</p>
+<p align="center">Input Matrix (X)</p>
     <p align="center">Each entry is a column vector</p>
         <p align="center">(Numpy indexes at 0)</p>
         <p align="center">k = Number of (independent) features</p>
         <p align="center">n = Number of entries</p>
               <p align="center">(k + 1) x n</p>
-        <p align="center">[ 1    1  . . .   1 ]</p>
+        <p align="center">[ 1    1  . . . .  . .  . . .   1 ]</p>
         <p align="center">[ x11 x22 . . . x2n ]</p>
         <p align="center">[ x21 x32 . . . x3n ]</p>
-        <p align="center">[ .    .  . . .   . ]</p>
-        <p align="center">[ .    .  . . .   . ]</p>
-        <p align="center">[ .    .  . . .   . ]</p>
+        <p align="center">[ . . . . . . . . .   .  . . .   . ]</p>
+        <p align="center">[ .    .  . . .  . . . . . . . .  . ]</p>
+        <p align="center">[ .    .  . . . . . . . . . . .   . ]</p>
         <p align="center">[ xk1 xk2 . . . xkn ]</p>
 
 `X` represents the entries matrix. Its dimensions are `(K + 1)xN`, where `K` is the number of independent features given by the user in the prompt, and `N` is the number of entries. Each entry is a column vector, and each subsequent row is a feature of that vector, except the first row, as it is comprised of only 1s. This is because `B`, the weight matrix, eventually gets multiplied with the weight matrix `X`, and the first element/weight in `B` is a constant.
 
-            <p align="center">Gradient vector (`P`)</p>
+<p align="center">Gradient vector (P)</p>
     <p align="center">Each row represents a partial derivative</p>
 <p align="center">(with respect to the respecitve weight variable)</p>
         <p align="center">(Numpy indexes at 0)</p>
