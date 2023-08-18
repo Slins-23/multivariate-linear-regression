@@ -911,6 +911,21 @@ for entry, col in zip(filtered_entries, range(N)):
     for feature, row in zip(feature_list, range(1, K + 1)):
         X[row, col] = entry.features[feature]
 
+'''
+            Weight Matrix
+    Each row represents a weight
+        (Numpy indexes at 0)
+        k = Number of (independent) features
+        n = Number of entries
+              (k + 1) x 1
+        [ b0 ]
+        [ b1 ]
+        [ b2 ]
+        [ .  ]
+        [ .  ]
+        [ .  ]
+        [ bk ]
+'''
 # Matrix as NDarray
 B = np.zeros((K + 1, 1), dtype=np.float64)
 
@@ -924,6 +939,22 @@ else:
     for row in range(K + 1):
         B[row, 0] = user_weights[row]
 
+'''
+            Gradient vector
+    Each row represents a partial derivative 
+(with respect to the respecitve weight variable)
+        (Numpy indexes at 0)
+    k = Number of (independent) features
+    n = Number of entries
+          (k + 1) x 1
+            [ p0 ]
+            [ p1 ]
+            [ p2 ]
+            [ .  ]
+            [ .  ]
+            [ .  ]
+            [ pk ]
+'''
 # Partials matrix
 # Matrix as NDarray
 P = np.zeros((K + 1, 1), dtype=np.float64)
