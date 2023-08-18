@@ -20,6 +20,8 @@ As I made this in a few days time with limited knowledge on the subject, I tried
 * Filtering dataset
 
 ## Implementation details
+The normalization occurs to the range [0, 1].
+
 Assume that 
 <br>
 `K = number of independent features given by the user when prompted`

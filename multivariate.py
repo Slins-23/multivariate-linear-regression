@@ -1050,9 +1050,18 @@ if len(feature_list) == 1:
     point_xs = []
     point_ys = []
     colors = []
+
+    min_y = math.inf
+    max_y = -math.inf
     for entry in filtered_entries:
         point_x = entry.features[feature_list[0]]
         point_y = entry.dependent_variable_value
+
+        if point_y < min_y:
+            min_y = point_y
+        
+        if point_y > max_y:
+            max_y = point_y
 
         point_xs.append(point_x)
         point_ys.append(point_y)
@@ -1063,6 +1072,11 @@ if len(feature_list) == 1:
         else:
             color = [0, 1, 0]
             colors.append(color)
+
+    x_padding = 0.02
+    y_padding = 0.02
+    plt.xlim([0 - (x_padding * 1), (1 + x_padding) * 1])
+    plt.ylim([min_y - (y_padding * max_y), (1 + y_padding) * max_y])
 
     
     plt.scatter(point_xs, point_ys, c=colors)
