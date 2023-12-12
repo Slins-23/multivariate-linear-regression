@@ -565,13 +565,20 @@ def normalize_helper(prev_value, prev_min, prev_max, new_min, new_max):
 def normalize(entry):
     # Ignores last feature (the dependent variable y to be predicted)
     for feature, idx in zip(feature_list, range(K)):
-        entry.features[feature] = normalize_helper(
+        normalized_value = normalize_helper(
             entry.features[feature],
             feature_min_maxes[idx][0],
             feature_min_maxes[idx][1],
             0,
             1
             )
+        
+        if feature_types[idx] == "str":
+            for key in nan_values.keys():
+                if nan_values[key] == entry.features[feature]:
+                    nan_values[key] = normalized_value
+        
+        entry.features[feature] = normalized_value
     
 def expected_fn(entry):
     # Matrix as NDarray
